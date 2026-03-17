@@ -1,49 +1,50 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Todo } from './todo.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class TodoService {
+  constructor(
+    @InjectRepository(Todo)
+    private todoRepository: Repository<Todo>,
+  ) {}
+
   private todoList: { id: number; name: string; isDone: boolean }[] = [
     { id: 0, name: 'dsaaaa', isDone: false },
   ];
 
   getAll() {
-    return this.todoList;
+    return this.todoRepository.find();
   }
 
-  getCurrent(id: string) {
-    const todo = this.todoList.find((el) => String(el.id) === String(id));
+  async getCurrent(id: number) {
+    const todo = await this.todoRepository.findOneBy({ id });
+
     if (!todo) {
       throw new NotFoundException(`Todo with id "${id}" not found`);
     }
+
     return todo;
   }
 
   addNew(name: string) {
-    const lastId = this.todoList.length
-      ? this.todoList[this.todoList.length - 1].id
-      : -1;
-
-    const todo = { id: lastId + 1, name, isDone: false };
-    this.todoList.push(todo);
-    return todo;
+    const todo = this.todoRepository.create({ name });
+    return this.todoRepository.save(todo);
   }
 
-  remove(id: number) {
-    const index = this.todoList.findIndex((el) => el.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`Todo with id "${id}" not found`);
-    }
-    this.todoList.splice(index, 1);
+  async remove(id: number) {
+    const todo = await this.getCurrent(id);
+    await this.todoRepository.remove(todo);
     return { deleted: true };
   }
 
-  update(id: number, name: string, isDone: boolean) {
-    const index = this.todoList.findIndex((el) => el.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`Todo with id "${id}" not found`);
-    }
-    const updated = { ...this.todoList[index], name, isDone };
-    this.todoList[index] = updated;
-    return updated;
+  async update(id: number, name: string, isDone: boolean) {
+    const todo = await this.getCurrent(id);
+
+    todo.name = name;
+    todo.isDone = isDone;
+
+    return this.todoRepository.save(todo);
   }
 }

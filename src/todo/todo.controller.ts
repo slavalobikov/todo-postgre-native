@@ -14,12 +14,12 @@ export class TodoController {
   constructor(private readonly todoService: TodoService) {}
 
   @Get()
-  getAll(): { id: number; name: string }[] {
+  getAll() {
     return this.todoService.getAll();
   }
 
   @Get(':id')
-  getOne(@Param('id') id: string) {
+  getOne(@Param('id') id: number) {
     return this.todoService.getCurrent(id);
   }
 
