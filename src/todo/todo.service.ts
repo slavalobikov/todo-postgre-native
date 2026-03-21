@@ -2,6 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Todo } from './todo.entity';
 import { Repository } from 'typeorm';
+import { TODO_STATUS } from './todo.controller';
+
+/** When set, filters todos by completion; omit for all todos. */
+export type TodoListFilter = {
+  status?: 'DONE' | 'NOT_DONE';
+};
 
 @Injectable()
 export class TodoService {
@@ -10,11 +16,17 @@ export class TodoService {
     private todoRepository: Repository<Todo>,
   ) {}
 
-  private todoList: { id: number; name: string; isDone: boolean }[] = [
-    { id: 0, name: 'dsaaaa', isDone: false },
-  ];
+  getAll(filter?: TodoListFilter) {
+    const status = filter?.status;
 
-  getAll() {
+    if (status === TODO_STATUS.DONE) {
+      return this.todoRepository.findBy({ isDone: true });
+    }
+
+    if (status === TODO_STATUS.NOT_DONE) {
+      return this.todoRepository.findBy({ isDone: false });
+    }
+
     return this.todoRepository.find();
   }
 
@@ -46,5 +58,13 @@ export class TodoService {
     todo.isDone = isDone;
 
     return this.todoRepository.save(todo);
+  }
+
+  getAllDone() {
+    return this.todoRepository.findBy({ isDone: true });
+  }
+
+  getAllNotDone() {
+    return this.todoRepository.findBy({ isDone: false });
   }
 }
